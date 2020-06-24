@@ -1,1 +1,0 @@
-# SynthText-vietnamese
