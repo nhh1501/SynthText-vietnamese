@@ -54,11 +54,9 @@ Note: I do not own the copyright to these images.
 ## Vietnamese 
 
 * Adding vietnamese
-* add arial and time new roman fonts
+* add some fonts
 * add character statistic 
-* add corpus contains 73913 words
-
-### Further Information
-Please refer to the paper for more information, or contact me (email address in the paper).
+* add corpus
+* i have sythtext-vietnamese, if you need, check my repo
 
 
