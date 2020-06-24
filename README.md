@@ -56,7 +56,5 @@ Note: I do not own the copyright to these images.
 * Adding vietnamese
 * add some fonts
 * add character statistic 
-* add corpus
-* i have sythtext-vietnamese, if you need, check my repo
-
+* add ncorpus
 
