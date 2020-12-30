@@ -18,6 +18,8 @@ from functools import reduce
 import re
 from time import time
 from data_provider import DateProvider
+import  PIL
+from matplotlib.pyplot import imshow
 import cv2
 
 
@@ -43,16 +45,27 @@ def add_res_to_db(imgname, res, db):
         dname = "%s_%d" % (imgname, i)
         # img = cv2.cvtColor(res[i]['img'], cv2.COLOR_RGB2BGR)
         # cv2.imwrite('img/'+ dname +'.jpg', img)
+
+
+        merged = reduce(lambda a, b: np.add(a, b), res[i]['masks'])
+        # since we just added values of pixels, need to bring it back to 0..255 range.
+
+        ##?
+        # merged = np.divide(merged, len(res[i]['masks']))
+        # db['data'].create_dataset(dname, data=merged)
+
+
+
         db['data'].create_dataset(dname, data=res[i]['img'])
-        # db['data'][dname].attrs['charBB'] = res[i]['charBB']
-        # db['data'][dname].attrs['wordBB'] = res[i]['wordBB']
+        db['data'][dname].attrs['charBB'] = res[i]['charBB']
+        db['data'][dname].attrs['wordBB'] = res[i]['wordBB']
         db['data'][dname].attrs['senBB'] = res[i]['senBB']
         L = res[i]['txt']
         # L = [n.encode("ascii", "ignore") for n in L]
         db['data'][dname].attrs['txt'] = L
 
 
-def main(viz=False, debug=False, output_masks=False, data_path=None):
+def main(viz=False, debug=False, output_masks=False, data_path=None, ocrgen= False):
     """
     Entry point.
 
@@ -76,6 +89,7 @@ def main(viz=False, debug=False, output_masks=False, data_path=None):
     # open the output h5 file:
     out_db = h5py.File(OUT_FILE, 'w')
     out_db.create_group('/data')
+    fe = open('ocr_gt.txt','a',encoding='utf-8')
     print(colorize(Color.GREEN, 'Storing the output in: ' + OUT_FILE, bold=True))
 
     # get the names of the image files in the dataset:
@@ -110,15 +124,22 @@ def main(viz=False, debug=False, output_masks=False, data_path=None):
             seg = np.array(Image.fromarray(seg).resize(sz, Image.NEAREST))
             print(colorize(Color.RED, '%d of %d' % (i, end_idx - 1), bold=True))
 
+            # sego = np.array(255 * seg / seg.max())
+            # orig = np.array(255 * depth)
+            # PIL.Image.fromarray(np.uint8(sego)).show()
+            # PIL.Image.fromarray(np.uint8(orig)).show()
+            # PIL.Image.fromarray(img).show()
+
+
             res = renderer.render_text(imname,img, depth, seg, area, label,
-                                  ninstance=INSTANCE_PER_IMAGE)
+                                  ninstance=INSTANCE_PER_IMAGE, ocrgen = ocrgen, fe = fe)
 
 
             if debug:
                 print("\n    Processing " + str(imname) + "...")
             if len(res) > 0:
                 # non-empty : successful in placing text:
-                # add_res_to_db(imname, res, out_db)
+                add_res_to_db(imname, res, out_db)
                 if debug:
                     print("    Success. " + str(len(res[0]['txt'])) + " texts placed:")
                     print("    Texts:" + ";".join(res[0]['txt']) + "")
@@ -172,6 +193,7 @@ def main(viz=False, debug=False, output_masks=False, data_path=None):
             continue
     provider.close()
     out_db.close()
+    fe.close()
 
 
 if __name__ == '__main__':
@@ -180,11 +202,13 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Genereate Synthetic Scene-Text Images')
     parser.add_argument('--viz', action='store_true', dest='viz', default=False,
                         help='flag for turning on visualizations')
-    parser.add_argument('--output-masks', action='store_true', dest='output_masks', default=False,
+    parser.add_argument('--ocrgen', action='store_true', dest='ocrgen', default=True,
+                        help='flag for turning on generate OCR data')
+    parser.add_argument('--output-masks', action='store_true', dest='output_masks', default=True,
                         help='flag for turning on output of masks')
     parser.add_argument('--debug', action='store_true', dest='debug', default=False,
                         help='flag for turning on debug output')
-    parser.add_argument("--data", type=str, dest='data_path', default='pro_process',
+    parser.add_argument("--data", type=str, dest='data_path', default=None,
                         help="absolute path to data directory containing images, segmaps and despths")
     args = parser.parse_args()
-    main(viz=args.viz, debug=args.debug, output_masks=args.output_masks, data_path=args.data_path)
+    main(viz=args.viz, debug=args.debug, output_masks=args.output_masks, data_path=args.data_path, ocrgen = args.ocrgen)

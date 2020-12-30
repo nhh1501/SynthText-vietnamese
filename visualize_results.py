@@ -79,7 +79,7 @@ def viz_textbb(name,text_im, charBB_list, wordBB,senBB, alpha=1.0):
     for i in range(senBB.shape[-1]):
         bb = senBB[:,:,i]
         bb = np.c_[bb,bb[:,0]]
-        plt.plot(bb[0,:], bb[1,:], 'g', alpha=alpha)
+        plt.plot(bb[0,:], bb[1,:], 'r', alpha=alpha,linewidth=7)
         # visualize the indiv vertices:
         vcol = ['r','g','b','k']
         for j in range(4):
@@ -96,13 +96,13 @@ def main(db_fname):
     print ("total number of images : ", colorize(Color.RED, len(dsets), highlight=True))
     for k in dsets:
         rgb = db['data'][k][...]
-        # charBB = db['data'][k].attrs['charBB']
-        # wordBB = db['data'][k].attrs['wordBB']
+        charBB = db['data'][k].attrs['charBB']
+        wordBB = db['data'][k].attrs['wordBB']
         senBB = db['data'][k].attrs['senBB']
         txt = db['data'][k].attrs['txt']
 
         # viz_textbb(k,rgb, [charBB], wordBB,senBB)
-        # viz_textbb(k,rgb,None,None ,senBB)
+        viz_textbb(k,rgb,None,None ,senBB)
         cre_output(k,rgb, senBB, txt)
 
         print ("image name        : ", colorize(Color.RED, k, bold=True))

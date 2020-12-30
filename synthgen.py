@@ -21,11 +21,13 @@ from colorize3_poisson import Colorize
 from common import *
 import traceback, itertools
 import imageio
+import os
 import codecs
 import time
 import re
 DEBUG = True
 MASKS_DIR = "./masks/"
+from ocr_gen import ocr_generate
 
 #? https://answers.opencv.org/question/2588/check-if-homography-is-good/
 def nice_homography(H):
@@ -74,8 +76,8 @@ def nice_homography(H):
         clockwise = True
     return clockwise
 
-def cre_output(imname,idx,res):
-
+def cre_output(imname,idx,res,ocrgen,fe):
+#?
         # ts = str(int(time() * 1000))
         imname = re.sub('.jpg', '', imname)
         imname = re.sub('.png', '', imname)
@@ -84,7 +86,7 @@ def cre_output(imname,idx,res):
 
         # imageio.imwrite(prefix + "_original.png", img)
         # imageio.imwrite(prefix + "_with_text.jpg", res[0]['img'])
-        imageio.imwrite(MASKS_DIR + prefix + ".jpg", res['img'])
+        #imageio.imwrite(MASKS_DIR + prefix + ".jpg", res['img'])
 
         # merge masks together:
         # merged = reduce(lambda a, b: np.add(a, b), res[0]['masks'])
@@ -107,6 +109,14 @@ def cre_output(imname,idx,res):
             as_strings = np.char.mod('%f', boxes[j].flatten())
             f.write(",".join(as_strings) + "," + words[j] + "\n")
         f.close()
+        if ocrgen :
+
+            ocr_generate(MASKS_DIR + prefix + ".jpg",res['img'],fe)
+            os.remove(MASKS_DIR + 'gt_' +prefix + ".txt")
+
+        else:
+            imageio.imwrite(MASKS_DIR + prefix + ".jpg", res['img'])
+
 
 class TextRegions(object):
     """
@@ -409,10 +419,10 @@ def viz_masks(fignum, rgb, seg, depth, label):
         img[mask] = rgb_rand[None, None, :]
 
     # import scipy
-    # imageio.imwrite('seg.png', mim)
-    # imageio.imwrite('depth.png', depth)
-    # imageio.imwrite('txt.png', rgb)
-    # imageio.imwrite('reg.png', img)
+    imageio.imwrite('seg.png', mim)
+    imageio.imwrite('depth.png', depth)
+    imageio.imwrite('txt.png', rgb)
+    imageio.imwrite('reg.png', img)
 
     plt.close(fignum)
     plt.figure(fignum,figsize=(15,15))
@@ -705,7 +715,7 @@ class RendererV3(object):
         return senBB
 
  #? quá trình render text vào hình, trả về (img , BB, Text, Mask(cùng kích thước với img)
-    def render_text(self, imname,rgb, depth, seg, area, label, ninstance=1):
+    def render_text(self, imname,rgb, depth, seg, area, label, ninstance=1, ocrgen = False, fe = None):
         """
         This method is rendering and
 
@@ -830,5 +840,5 @@ class RendererV3(object):
                 idict['labeled_region'] = regions['label']
                 res.append(idict.copy())
 
-                cre_output(imname,i,idict)
+                cre_output(imname,i,idict,ocrgen,fe)
         return res

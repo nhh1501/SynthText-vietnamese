@@ -15,7 +15,7 @@ pygame.init()
 
 ys = np.arange(8,200)
 A = np.c_[ys,np.ones_like(ys)]
-file1 = open("data/models/model.txt","w")
+file1 = open('data/models/model.txt','w')
 
 xs = []
 models = {} #linear model

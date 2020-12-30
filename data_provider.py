@@ -41,7 +41,8 @@ class DateProvider(object):
             self.depth_db = h5py.File(osp.join(self.path, path_depth), 'r')
             self.seg_db = h5py.File(osp.join(self.path, path_segmap), 'r')
             self.imnames = sorted(self.depth_db.keys())
-            self.segmap = self.seg_db['mask']
+            self.segmap = self.seg_db
+            # self.segmap = self.seg_db['mask']
             self.depth = self.depth_db
 
     @staticmethod
@@ -61,7 +62,7 @@ class DateProvider(object):
                 out_fname = 'data.tar.gz'
                 wget.download(DATA_URL, out=out_fname)
                 tar = tarfile.open(out_fname)
-                tar.extractall()
+                tar.extract('data/dset.h5')
                 tar.close()
                 os.remove(out_fname)
                 colorprint(Color.BLUE, '\n\tdata saved at:' + DB_FNAME, bold=True)
@@ -84,7 +85,8 @@ class DateProvider(object):
 
     def get_depth(self, imname: str):
         if self.db is None:
-            return self.depth[imname][:].T[:, :, 0]
+            # return self.depth[imname][:].T[:, :, 0]
+            return self.depth[imname][:]
         else:
             return self.depth[imname][:].T[:, :, 1]
 

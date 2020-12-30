@@ -94,8 +94,8 @@ class RenderFont(object):
         # the minimum number of characters that should fit in a mask
         # to define the maximum font height.
         self.min_nchar = 2
-        self.min_font_h = 20 #px : 0.6*12 ~ 7px <= actual minimum height
-        self.max_font_h = 120 #px
+        self.min_font_h = 14 #px : 0.6*12 ~ 7px <= actual minimum height
+        self.max_font_h = 100 #px
         self.p_flat = 0.10
 
         # curved baseline:
@@ -334,8 +334,21 @@ class RenderFont(object):
         H,W = self.robust_HW(mask)
         f_asp = self.font_state.get_aspect_ratio(font)
 
+        #? CÓ CHỈNH SỬAA ATỊ ĐÂY
         # find the maximum height in pixels:
-        max_font_h = min(0.9*H, (1/f_asp)*W/(self.min_nchar+1))
+        # max_font_h = min(0.9*H, (1/f_asp)*W/(self.min_nchar+1)) #original
+
+        #? tìm max font hight size
+        #? ## gen ra nhiều chữ hay ít chữ sẽ được quyết định bởi max_font_h và min_font_h  -
+        # - có thể chỉnh sửa ở dưới đây:
+        # rand_choice = np.random.rand()
+        # if rand_choice < 0.8 :
+            # max_font_h = min(0.9*H, (1/f_asp)*W/(8)) #edit
+            # max_font_h = min(0.9*H, (1/f_asp)*W/(6)) #edit
+        # else :
+        #     max_font_h = min(0.9*H, (1/f_asp)*W/(3.5)) #edit
+        max_font_h = min(0.9 * H, (1 / f_asp) * W / (3.5))
+
         max_font_h = min(max_font_h, self.max_font_h)
         if max_font_h < self.min_font_h: # not possible to place any text here
             return #None
@@ -360,7 +373,7 @@ class RenderFont(object):
             font.size = f_h # set the font-size
 
             # compute the max-number of lines/chars-per-line:
-            #?
+            #? tìm ra số line và số ký tự lớn nhất trong text được tạo ra phụ thuộc tất cả vào font-size
             nline,nchar = self.get_nline_nchar(mask.shape[:2],f_h,f_h*f_asp)
             #print "  > nline = %d, nchar = %d"%(nline, nchar)
 
@@ -368,18 +381,29 @@ class RenderFont(object):
             #? lấy text
             # sample text:
             # text_type = sample_weighted(self.p_text)
-            text_type = 'LINE'
+            # text_type = 'LINE'
+            text_type = 'WORD'
+            idx = 0
             while (True):
-                text = self.text_source.sample(nline,nchar,text_type)
+                # text = self.text_source.sample(nline,nchar,text_type)
+                text = self.text_source.sample(1,nchar,text_type)
                 if isinstance(text,str):
                      if (text.find('\n') == -1) :
-                       break
+                         if len(text.split()) == 1:
+                             idx+=1
+                             if idx >2:
+                                 break
+                         else:
+                            break
                 else:
                     # text = self.text_source.sample(nline, nchar, text_type)ext
                     break
 
             if len(text)==0 or np.any([len(line)==0 for line in text]):
                 continue
+                #?
+            if len(text.split()) ==1:
+                pass
 
             # print colorize(Color.GREEN, text)
 
@@ -617,6 +641,7 @@ class TextSource(object):
         iter = 0
         while not np.all(self.is_good(lines,f)) and iter < niter:
             iter += 1
+            #lấy text trong tập data
             lines = h_lines(niter=100)
             # get words per line:
             nline = len(lines)
@@ -626,7 +651,7 @@ class TextSource(object):
                 if dw > 0:
                     first_word_index = random.choice(range(dw+1))
                     lines[i] = ' '.join(words[first_word_index:first_word_index+nword[i]])
-
+                # Lần lượt bỏ đi từng word trong line cho đến khi thảo điều kiện text
                 while len(lines[i]) > nchar_max: #chop-off characters from end:
                     if not np.any([ch.isspace() for ch in lines[i]]):
                         lines[i] = ''
